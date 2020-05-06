@@ -6,7 +6,8 @@ class Spectral:
     def __init__(self, data, c):
         self.data = data
         self.n_clusters = c
-        self.spc = SpectralClustering(n_clusters=self.n_clusters, n_jobs=2)
+        if c is None: self.spc = SpectralClustering(n_jobs=2)
+        else: self.spc = SpectralClustering(n_clusters=self.n_clusters, n_jobs=2)
 
     def model_name(self):
         title = "Spectral Algorithm"

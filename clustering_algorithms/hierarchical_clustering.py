@@ -9,14 +9,17 @@ class Agglomerative:
         self.linkage = ahc_linkage
         if self.linkage is None:
             self.linkage = self.Linkage.ward
-        self.ahc = AgglomerativeClustering(
-            n_clusters=c,
-            linkage=self.linkage.name
-        )
+        if c is None:
+            self.ahc = AgglomerativeClustering(linkage=self.linkage)
+        else:
+            self.ahc = AgglomerativeClustering(
+                n_clusters=c,
+                linkage=self.linkage
+            )
 
     def model_name(self):
         title = "AHC (l={})"
-        lin = self.linkage.name[:2]
+        lin = self.linkage
         return title.format(lin)
 
     def clusterize(self):

@@ -6,7 +6,9 @@ class KMeansAlgorithm:
     def __init__(self, data, c):
         self.data = data
         self.n_clusters = c
-        self.kmean = KMeans(n_clusters=self.n_clusters, n_jobs=2)
+        if c is None: self.kmean = KMeans(n_jobs=2)
+        else:
+            self.kmean = KMeans(n_clusters=self.n_clusters, n_jobs=2)
 
     def model_name(self):
         title = "K-Means"

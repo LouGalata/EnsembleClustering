@@ -18,21 +18,29 @@ from sklearn.metrics import (
 
 class Validator:
 
-    def __init__(self, name, dataset, ground_truth):
+    def __init__(self, name, dataset, ground_truth, consensus, are_clusters_fixed):
         self.name = name
         self.dataset = dataset
         self.ground_truth = ground_truth
+        self.are_clusters_fixed = 'fixed_k' if are_clusters_fixed else 'random_k'
         self.labels = [a.decode('UTF8') for a in set(ground_truth)]
         self.freq_ground_truth = self.__map_values_by_frequency(self.ground_truth)
         self.pca = PCA(n_components=2)
         # Compute the PCA-transformation for the input data
         self.pc = self.pca.fit_transform(self.dataset.to_numpy())
+        self.consensus = consensus
 
-    def internal_index_db(self, assignations):
+    def __internal_index_db(self, assignations):
         davies_bouldin = dict()
         for key, value in assignations.items():
             davies_bouldin[key] = davies_bouldin_score(self.dataset.to_numpy(), value)
         return davies_bouldin
+
+    def __accuracy_score(self, assignations):
+        accuracies = dict()
+        for key, value in assignations.items():
+            accuracies[key] = accuracy_score(self.freq_ground_truth, value)
+        return accuracies
 
     def __validate_jaccardi(self, assignations):
         jaccard_results = dict()
@@ -46,58 +54,82 @@ class Validator:
             nmi_results[key] = normalized_mutual_info_score(self.freq_ground_truth, value)
         return nmi_results
 
-    def validata_single_run(self):
+    def validate_consensus(self):
         assignations = dict()
-        assignations['average_linkage'] = np.load(os.path.join('clusters', self.name, 'AL.npy'))
-        assignations['complete_linkage'] = np.load(os.path.join('clusters', self.name, 'CL.npy'))
-        assignations['single_linkage'] = np.load(os.path.join('clusters', self.name, 'SL.npy'))
-        assignations['kmeans'] = np.load(os.path.join('clusters', self.name, 'Kmeans.npy'))
-        assignations['kmedoids'] = np.load(os.path.join('clusters', self.name, 'Kmedoids.npy'))
-        assignations['spectral'] = np.load(os.path.join('clusters', self.name, 'Spectral.npy'))
+        assignations['BA'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'BA.npy'))
+        assignations['CO'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'CO.npy'))
+        assignations['TMB'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'TMB.npy'))
+        assignations['FCM'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'FCM.npy'))
+        assignations['WCT'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WCT.npy'))
+        assignations['WTQT'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WTQ.npy'))
+
         for key, value in assignations.items():
             assignations[key] = self.__get_label_rotations(self.__map_values_by_frequency(value))
 
         jaccard_results = self.__validate_jaccardi(assignations)
         nmi_score = self.__validate_nmi(assignations)
-        davies_bouldin = self.internal_index_db(assignations)
-        self.plot_single_run_results(jaccard_results, nmi_score, davies_bouldin)
+        davies_bouldin = self.__internal_index_db(assignations)
+        accuracy = self.__accuracy_score(assignations)
+        self.plot_consensus_results(jaccard_results, nmi_score, davies_bouldin, accuracy)
+        self.save_scores(jaccard_results, nmi_score, davies_bouldin, accuracy)
         for key, value in assignations.items():
             self.visualize(value, key)
 
+    def save_scores(self, jaccard_results, nmi_score, davies_bouldin, accuracy):
+        col = ['matrix','jaccard', 'nmi', 'davies_bouldin', 'accuracy']
+        df = pd.DataFrame(columns=col)
+        df['jaccard'] = jaccard_results.values()
+        df['nmi'] = nmi_score.values()
+        df['davies_bouldin'] = davies_bouldin.values()
+        df['accuracy'] = accuracy.values()
+        df['matrix'] = list(jaccard_results.keys())
+        result_path = os.path.join('out', self.name, self.are_clusters_fixed)
+        df.to_csv(result_path + '/{}_scores.csv'.format(self.consensus), sep='\t', index=False, header=True)
 
-    def plot_single_run_results(self, jaccard_results, nmi_score, davies_bouldin):
+    def plot_consensus_results(self, jaccard_results, nmi_score, davies_bouldin, accuracy):
         x = list(jaccard_results.keys())
         y = list(jaccard_results.values())
+        bars = len(x)
         sns.set_context(rc={"figure.figsize": (8, 4)})
-        plt.ylim(max(0, min(y) - 0.05), max(y) + 0.05, 1)
-        plt.xticks(list(range(6)))
-        fig = plt.bar(list(range(6)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
-        plt.legend(fig, list(x), loc="upper left", title='Algorithms', framealpha=0.2)
-        plt.title(self.name + ': Jaccard Distance')
-        result_path = os.path.join('results', self.name)
+        plt.ylim(np.min(y) - 0.05, np.max(y) + 0.05)
+        plt.xticks(list(range(bars)))
+        fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
+        plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
+        plt.title(self.name + ' - '+ self.consensus + ': Jaccard Distance')
+        result_path = os.path.join('out', self.name, self.are_clusters_fixed)
         if not os.path.exists(result_path):
             os.makedirs(result_path)
-        plt.savefig(os.path.join(result_path, 'single_run_jaccard.png'))
+        plt.savefig(os.path.join(result_path, self.consensus+'_jaccard_score.png'))
 
         x = list(nmi_score.keys())
         y = list(nmi_score.values())
         sns.set_context(rc={"figure.figsize": (8, 4)})
-        plt.ylim(max(0, min(y) - 0.05), max(y) + 0.05, 1)
-        plt.xticks(list(range(6)))
-        fig = plt.bar(list(range(6)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
-        plt.legend(fig, list(x), loc="upper left", title='Algorithms', framealpha=0.2)
-        plt.title(self.name + ': Normalized Mutual Info')
-        plt.savefig(os.path.join(result_path, 'single_run_nmi.png'))
+        plt.ylim(np.min(y) - 0.05, np.max(y) + 0.05)
+        plt.xticks(list(range(bars)))
+        fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
+        plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
+        plt.title(self.name + ' - '+ self.consensus + ': Normalized Mutual Info')
+        plt.savefig(os.path.join(result_path, self.consensus+'_nmi_score.png'))
 
         x = list(davies_bouldin.keys())
         y = list(davies_bouldin.values())
         sns.set_context(rc={"figure.figsize": (8, 4)})
-        plt.ylim(max(0, min(y) - 0.05), max(y) + 0.05, 1)
-        plt.xticks(list(range(6)))
-        fig = plt.bar(list(range(6)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
-        plt.legend(fig, list(x), loc="upper left", title='Algorithms', framealpha=0.2)
-        plt.title(self.name + ': Davies Bouldin')
-        plt.savefig(os.path.join(result_path, 'single_run_bouldin.png'))
+        plt.ylim(np.min(y) - 0.05, np.max(y) + 0.05)
+        plt.xticks(list(range(bars)))
+        fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
+        plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
+        plt.title(self.name + ' - '+ self.consensus + ': Davies Bouldin')
+        plt.savefig(os.path.join(result_path, self.consensus+'_bouldin_score.png'))
+
+        x = list(accuracy.keys())
+        y = list(accuracy.values())
+        sns.set_context(rc={"figure.figsize": (8, 4)})
+        plt.ylim(np.min(y) - 0.05, np.max(y) + 0.05)
+        plt.xticks(list(range(bars)))
+        fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
+        plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
+        plt.title(self.name + ' - ' + self.consensus + ': Accuracy')
+        plt.savefig(os.path.join(result_path, self.consensus + '_accuracy_score.png'))
 
 
     def __map_values_by_frequency(self, values):
@@ -142,7 +174,7 @@ class Validator:
         # Visualize the clustering partition using the PCA-transformation
         components = pd.DataFrame(self.pc)
         fig, ax = plt.subplots()
-        colormap = np.array(self.get_random_color(len(self.labels)))
+        colormap = np.array(self.get_random_color(clustering))
         ax.scatter(
             components[0],
             components[1],
@@ -151,15 +183,21 @@ class Validator:
         )
         plt.xlabel('Eigenvektor 1')
         plt.ylabel('Eigenvektor 2')
-        plt.title(self.name + ': ' + title)
-        figure_name = "clustering_{}".format(title)
-        path = os.path.join('results', self.name, figure_name)
-        plt.savefig(path)
+        plt.title(self.name + ' - ' + self.consensus + ': ' + title)
+        figure_name = "scatter_plot_{}".format(title)
+        path = os.path.join('out', self.name, self.are_clusters_fixed, self.consensus)
+        if not os.path.exists(path):
+            os.makedirs(path)
+        plt.savefig(path + '/' + figure_name)
+        plt.close()
 
 
-    def get_random_color(self, c):
+    def get_random_color(self, clusters):
         colors = []
-        for _ in range(len(self.labels)):
-            color = '#' + ''.join([str(k) for k in random.choices(list(range(0, 9)) + ['a', 'b', 'c', 'd', 'e', 'f'], k=4)])  +'ff'
+        length = len(np.array(list(set(clusters))).astype(int))
+        for _ in range(length):
+            random_color = random.choices(list(range(0, 9)) + ['a', 'b', 'c', 'd', 'e', 'f'], k=4)
+            color = '#' + ''.join([str(k) for k in random_color])  +'aa'
             colors.append(color)
         return colors
+
