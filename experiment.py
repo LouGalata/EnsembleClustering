@@ -6,13 +6,15 @@ from clustering_algorithms.hierarchical_clustering import Agglomerative
 from clustering_algorithms.k_means_clustering import KMeansAlgorithm
 from clustering_algorithms.k_medoids_clustering import Kmedoid
 from clustering_algorithms.spectral_clustering import Spectral
-# from clustering_algorithms.metis_clustering import MetisClustering
+from clustering_algorithms.metis_clustering import MetisClustering
 from validator import Validator
 from clustering_algorithms.fuzzy_c_means import FuzzyMeansAlgorithm
 from matrix_constructor import MatrixConstructor
 from consensus_strategies import Consensus
 import math
 import random
+import scipy
+import networkx as nx
 
 
 class Experiment:
@@ -72,8 +74,11 @@ class Experiment:
 
     def __train_kmeans_ensemblers(self, c, exp_num):
         numerical = self.numerical.to_numpy()
-        model = KMeansAlgorithm(numerical, c)
-        assignations = model.clusterize()
+        assignations = []
+        cl = self.num_fixed_c if self.are_clusters_fixed else self.num_random_c
+        while (len(set(assignations)) < cl):
+            model = KMeansAlgorithm(numerical, c)
+            assignations = model.clusterize()
         FileManager().save_assignments(assignations, self.name, exp_num, self.are_clusters_fixed, algorithm='Kmeans')
 
 
@@ -115,13 +120,27 @@ class Experiment:
         Validator(self.name, self.numerical, self.ground_truth, 'Spectral', self.are_clusters_fixed).validate_consensus()
 
 
-    # def __train_metis_model(self, c):
-    #     matrices = FileManager().get_ensembling_matrices(self.name, self.are_clusters_fixed)
-    #     for key, value in matrices.items():
-    #         model = MetisClustering(value, c)
-    #         assignations = model.clusterize()
-    #         FileManager().save_results(assignations, self.name, key, self.are_clusters_fixed, 'Metis')
+    def __train_metis_model(self, c):
+        matrices = FileManager().get_ensembling_matrices(self.name, self.are_clusters_fixed)
+        for key, value in matrices.items():
+            if key == 'CO':
+                model = MetisClustering(value, c)
+                assignations = model.clusterize()[1]
+                FileManager().save_results(assignations, self.name, key, self.are_clusters_fixed, 'Metis')
+            else:
+                features = len(value[0])
+                graph = nx.Graph()
+                graph.add_nodes_from(list(range(self.num_rows)))
+                graph.add_nodes_from(list(range(self.num_rows, self.num_rows+features)))
+                for cnt_row, rows in enumerate(value):
+                    for cnt_col, col in enumerate(rows):
+                        graph.add_edge(cnt_row, self.num_rows + cnt_col, weight=col)
 
+                model = MetisClustering(value, c, graph)
+                assignations = model.clusterize()[1][:self.num_rows]
+                FileManager().save_results(assignations, self.name, key, self.are_clusters_fixed, 'Metis')
+        Validator(self.name, self.numerical, self.ground_truth, 'Metis',
+                      self.are_clusters_fixed).validate_consensus()
 
     def create_ensembling_matrices(self):
         print("Ensemble clustering: \033[1m{}\033[0m (N={})\n".format(self.name, self.num_rows))
@@ -147,8 +166,8 @@ class Experiment:
         elif consensus_strategy == 'SPC':
             self.__train_spectral_model(self.real_number_of_classes)
 
-        # elif consensus_strategy == 'METIS':
-        #     self.__train_metis_model(self.real_number_of_classes)
+        elif consensus_strategy == 'METIS':
+            self.__train_metis_model(self.real_number_of_classes)
 
         else:
             print('Method {} is either not implemented or wrong written'.format(consensus_strategy))

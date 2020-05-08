@@ -11,7 +11,7 @@ if __name__ == "__main__":
     bars = ['BA', 'CO', 'TMB', 'FCM', 'WCT', 'WTQ']
     path = os.path.join('out',dataset_name, fixed_or_random)
 
-    scores = [score for score in os.listdir(path) if score.endswith('scores.csv')]
+    scores = [score for score in os.listdir(path) if score.endswith('scores.csv') and score.startswith('Metis')]
 
     score_dict = dict()
     for score in scores:

@@ -23,7 +23,7 @@ class Validator:
         self.dataset = dataset
         self.ground_truth = ground_truth
         self.are_clusters_fixed = 'fixed_k' if are_clusters_fixed else 'random_k'
-        self.labels = [a.decode('UTF8') for a in set(ground_truth)]
+        self.labels = [a.decode('UTF8') for a in set(ground_truth) if isinstance(a, str)]
         self.freq_ground_truth = self.__map_values_by_frequency(self.ground_truth)
         self.pca = PCA(n_components=2)
         # Compute the PCA-transformation for the input data
@@ -61,7 +61,7 @@ class Validator:
         assignations['TMB'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'TMB.npy'))
         assignations['FCM'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'FCM.npy'))
         assignations['WCT'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WCT.npy'))
-        assignations['WTQT'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WTQ.npy'))
+        assignations['WTQ'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WTQ.npy'))
 
         for key, value in assignations.items():
             assignations[key] = self.__get_label_rotations(self.__map_values_by_frequency(value))
