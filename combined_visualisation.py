@@ -1,15 +1,14 @@
-import matplotlib.pyplot as plt
 import os
+import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from matplotlib import colors as clr
 
 if __name__ == "__main__":
     dataset_name = 'iris'
-    fixed_or_random = 'fixed_k'   # random_k
+    fixed_or_random = 'fixed_k'  # random_k
     consensus_algorithms = ['AL', 'SL', 'AL', 'Kmeans', 'Kmedoids', 'Spectral']
     bars = ['BA', 'CO', 'TMB', 'FCM', 'WCT', 'WTQ']
-    path = os.path.join('out',dataset_name, fixed_or_random)
+    path = os.path.join('out', dataset_name, fixed_or_random)
 
     scores = [score for score in os.listdir(path) if score.endswith('scores.csv') and score.startswith('Metis')]
 
@@ -22,7 +21,6 @@ if __name__ == "__main__":
     jaccard_dict = dict()
     for key, _ in score_dict.items():
         jaccard_dict[key] = score_dict[key]['jaccard']
-
 
     # NMI Plot
     nmi_dict = dict()
@@ -54,7 +52,6 @@ if __name__ == "__main__":
         for key, value in nmi_dict.items():
             nmi_deformed_in[key] = value[cnt]
         nmi_deformed[bar] = nmi_deformed_in
-
 
     cmap = clr.LinearSegmentedColormap.from_list('custom blue',
                                                  [(0, '#4f5fff'),

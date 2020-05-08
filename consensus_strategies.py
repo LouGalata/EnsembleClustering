@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Consensus(Enum):
     AL = 'Average Linkage'
     CL = 'Complete Linkage'

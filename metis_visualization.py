@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
 import os
+
+import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from matplotlib import colors as clr
 
 
@@ -51,13 +51,12 @@ if __name__ == "__main__":
     consensus_algorithms = ['AL', 'SL', 'AL', 'Kmeans', 'Kmedoids', 'Spectral', 'Metis']
     # bars = ['BA', 'CO', 'TMB', 'FCM', 'WCT', 'WTQ']
     bars = ['CO']
-    path = os.path.join('out',dataset_name)
-    path_fixed = os.path.join('out',dataset_name, 'fixed_k')
-    path_random = os.path.join('out',dataset_name, 'random_k')
+    path = os.path.join('out', dataset_name)
+    path_fixed = os.path.join('out', dataset_name, 'fixed_k')
+    path_random = os.path.join('out', dataset_name, 'random_k')
 
     scores_fixed = [score for score in os.listdir(path_fixed) if score.endswith('scores.csv')]
     scores_random = [score for score in os.listdir(path_random) if score.endswith('scores.csv')]
-
 
     score_dict_fixed = dict()
     for score in scores_fixed:
@@ -88,7 +87,6 @@ if __name__ == "__main__":
                                                  [(0, '#289ef3'),
                                                   (1, '#d1e1e9')], N=256)
 
-
     pd.DataFrame(acc_combined).plot(kind='bar', rot=0, colormap=cmap, grid=False)
     plt.title(dataset_name + ' ' + 'Accuracy')
     plt.savefig(path + '/metis_total_accuracy.png')
@@ -103,4 +101,3 @@ if __name__ == "__main__":
     plt.title(dataset_name + ' ' + 'NMI')
     plt.savefig(path + '/metis_total_nmi.png')
     plt.close()
-

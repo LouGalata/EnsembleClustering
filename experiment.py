@@ -1,20 +1,21 @@
-from file_manager import FileManager
+import math
 import os
+import random
+
+import networkx as nx
 import numpy as np
-from preprocessing import Preprocessor
+
+from clustering_algorithms.fuzzy_c_means import FuzzyMeansAlgorithm
 from clustering_algorithms.hierarchical_clustering import Agglomerative
 from clustering_algorithms.k_means_clustering import KMeansAlgorithm
 from clustering_algorithms.k_medoids_clustering import Kmedoid
-from clustering_algorithms.spectral_clustering import Spectral
 from clustering_algorithms.metis_clustering import MetisClustering
-from validator import Validator
-from clustering_algorithms.fuzzy_c_means import FuzzyMeansAlgorithm
-from matrix_constructor import MatrixConstructor
+from clustering_algorithms.spectral_clustering import Spectral
 from consensus_strategies import Consensus
-import math
-import random
-import scipy
-import networkx as nx
+from file_manager import FileManager
+from matrix_constructor import MatrixConstructor
+from preprocessing import Preprocessor
+from validator import Validator
 
 
 class Experiment:

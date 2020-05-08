@@ -1,12 +1,12 @@
 import os
-import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+
 import networkx as nx
-import matplotlib.pyplot as plt
+import numpy as np
+
 from file_manager import FileManager
 
-class MatrixConstructor:
 
+class MatrixConstructor:
     DECAY = 0.9
 
     def __init__(self, name=None, are_clusters_fixed=None, num_random_c=None, num_fixed_c=None):
@@ -21,7 +21,6 @@ class MatrixConstructor:
         self.ra_num_clusters_of_each_partition = None
         self.triples_labels = None
 
-
     def load_matrices(self, num_ensemblers):
         base_clusterings = []
         fuzzy_base_clusterings = []
@@ -31,7 +30,8 @@ class MatrixConstructor:
 
         for i in range(num_ensemblers):
             fuzzy_base_clusterings.append(np.load(
-                os.path.join('clusters', self.name, self.are_clusters_fixed, 'FuzzyMeans', 'ensembling_{}.npy'.format(i))))
+                os.path.join('clusters', self.name, self.are_clusters_fixed, 'FuzzyMeans',
+                             'ensembling_{}.npy'.format(i))))
 
         self.num_random_c = len(set(base_clusterings[0]))
         if self.are_clusters_fixed == 'fixed_k':
@@ -47,7 +47,7 @@ class MatrixConstructor:
         FCM_matrix = self.__build_FCM_matrix(fuzzy_base_clusterings)
         # WDM_matrix = self.__build_WDM_matrix()
         RA_WCT_matrix = self.__build_RA_WCT_matrix(base_clusterings)
-        RA_WTQ_matrix= self.__build_RA_WTQ_matrix(base_clusterings)
+        RA_WTQ_matrix = self.__build_RA_WTQ_matrix(base_clusterings)
 
         # Save matrices
         FileManager().save_ensembling_matrices(self.name, BA_matrix, 'BA', self.are_clusters_fixed)
@@ -56,7 +56,6 @@ class MatrixConstructor:
         FileManager().save_ensembling_matrices(self.name, FCM_matrix, 'FCM', self.are_clusters_fixed)
         FileManager().save_ensembling_matrices(self.name, RA_WCT_matrix, 'WCT', self.are_clusters_fixed)
         FileManager().save_ensembling_matrices(self.name, RA_WTQ_matrix, 'WTQ', self.are_clusters_fixed)
-
 
     def __build_pairwise_similarity_matrix(self, base_clustering):
         pairwise_matrix = np.zeros((self.num_rows, self.num_rows), dtype=np.float)
@@ -80,11 +79,12 @@ class MatrixConstructor:
         return binary_clustering_matrix
 
     def __build_coassociation_matrix(self, base_clusterings):
-        pairwise_matrices = [self.__build_pairwise_similarity_matrix(base_clustering) for base_clustering in base_clusterings]
-        return np.sum(pairwise_matrices, axis=0)/self.total_clusters
+        pairwise_matrices = [self.__build_pairwise_similarity_matrix(base_clustering) for base_clustering in
+                             base_clusterings]
+        return np.sum(pairwise_matrices, axis=0) / self.total_clusters
 
     def __build_TMB_matrix(self):
-        probabilities = np.sum(self.BA, axis=0)/self.num_rows
+        probabilities = np.sum(self.BA, axis=0) / self.num_rows
         return self.BA - probabilities
 
     def __build_FCM_matrix(self, fuzzy_based_clusterings):
@@ -102,12 +102,13 @@ class MatrixConstructor:
         wct_node = dict()
         for key, value in self.triples_labels.items():
             n1, n2 = key
-            wct_node[key] = sum([min(abs(self.ra_graph[n1][a]['weight']), abs(self.ra_graph[n2][a]['weight'])) for a in value])
+            wct_node[key] = sum(
+                [min(abs(self.ra_graph[n1][a]['weight']), abs(self.ra_graph[n2][a]['weight'])) for a in value])
             wct_node[(n2, n1)] = wct_node[key]
         wct_max = max(wct_node.values())
 
         for key, value in wct_node.items():
-            wct_node[key] = (wct_node[key]/wct_max) * MatrixConstructor.DECAY
+            wct_node[key] = (wct_node[key] / wct_max) * MatrixConstructor.DECAY
 
         for node in self.ra_graph.nodes():
             wct_node[(node, node)] = 1.0
@@ -116,21 +117,20 @@ class MatrixConstructor:
         for i in range(self.num_rows):
             cnt = 0
             for j in range(self.total_clusters):
-                if j > self.ra_num_clusters_of_each_partition[cnt] -1: cnt +=1
+                if j > self.ra_num_clusters_of_each_partition[cnt] - 1: cnt += 1
                 # TODO: remove the -1
                 current_assignment = base_clusterings[cnt][i]
-                if cnt > 0: current_assignment += self.ra_num_clusters_of_each_partition[cnt-1]
-                ra_wct_clustering_matrix[i, j] = wct_node[(current_assignment,j)]
+                if cnt > 0: current_assignment += self.ra_num_clusters_of_each_partition[cnt - 1]
+                ra_wct_clustering_matrix[i, j] = wct_node[(current_assignment, j)]
 
         return ra_wct_clustering_matrix
-
 
     def __build_RA_WTQ_matrix(self, base_clusterings):
         n_nodes = self.ra_graph.number_of_nodes()
         w_centers = np.zeros(n_nodes, dtype=np.float)
         for node in range(n_nodes):
             neighbors = self.ra_graph.neighbors(node)
-            w_centers[node] = 1.0/(sum([self.ra_graph[node][n]['weight'] for n in neighbors]))
+            w_centers[node] = 1.0 / (sum([self.ra_graph[node][n]['weight'] for n in neighbors]))
 
         wtq_node = dict()
         for key, value in self.triples_labels.items():
@@ -157,7 +157,6 @@ class MatrixConstructor:
                 ra_wtq_clustering_matrix[i, j] = wtq_node[(current_assignment, j)]
 
         return ra_wtq_clustering_matrix
-
 
     def __create_ra_graph_helper(self, base_clusterings):
         graph = nx.Graph()

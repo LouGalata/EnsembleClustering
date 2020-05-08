@@ -1,7 +1,5 @@
 from experiment import Experiment
 
-
-
 datasets = {'iris', 'breast-cancer', 'iono', 'ecoli', 'wine'}
 # Iris: N=150, d=4, k=3
 if __name__ == '__main__':
@@ -17,12 +15,12 @@ if __name__ == '__main__':
 
     datasets = {('donut2', 2, 'artificial')}
 
-
     for dataset in datasets:
         for are_clusters_fixed in [True, False]:
             # for algorithm in ['SL', 'CL', 'AL', 'PAM', 'KM', 'SPC', 'METIS']:
             for algorithm in ['SL']:
-                controller = Experiment(dataset=dataset[0], real_or_artificial=dataset[2], real_number_of_classes=dataset[1], are_clusters_fixed=are_clusters_fixed)
+                controller = Experiment(dataset=dataset[0], real_or_artificial=dataset[2],
+                                        real_number_of_classes=dataset[1], are_clusters_fixed=are_clusters_fixed)
 
                 controller.run_single_clusterings()
                 # controller.create_ensembling_matrices()

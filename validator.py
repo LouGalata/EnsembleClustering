@@ -1,15 +1,14 @@
-from sklearn.decomposition import PCA
-import numpy as np
 import os
-from collections import Counter
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
 import random
+from collections import Counter
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from sklearn.decomposition import PCA
 from sklearn.metrics import (
     accuracy_score,
-    confusion_matrix,
     davies_bouldin_score,
     jaccard_score,
     normalized_mutual_info_score
@@ -56,12 +55,18 @@ class Validator:
 
     def validate_consensus(self):
         assignations = dict()
-        assignations['BA'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'BA.npy'))
-        assignations['CO'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'CO.npy'))
-        assignations['TMB'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'TMB.npy'))
-        assignations['FCM'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'FCM.npy'))
-        assignations['WCT'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WCT.npy'))
-        assignations['WTQ'] = np.load(os.path.join('results', self.name, self.are_clusters_fixed, self.consensus,'WTQ.npy'))
+        assignations['BA'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'BA.npy'))
+        assignations['CO'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'CO.npy'))
+        assignations['TMB'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'TMB.npy'))
+        assignations['FCM'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'FCM.npy'))
+        assignations['WCT'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'WCT.npy'))
+        assignations['WTQ'] = np.load(
+            os.path.join('results', self.name, self.are_clusters_fixed, self.consensus, 'WTQ.npy'))
 
         for key, value in assignations.items():
             assignations[key] = self.__get_label_rotations(self.__map_values_by_frequency(value))
@@ -76,7 +81,7 @@ class Validator:
             self.visualize(value, key)
 
     def save_scores(self, jaccard_results, nmi_score, davies_bouldin, accuracy):
-        col = ['matrix','jaccard', 'nmi', 'davies_bouldin', 'accuracy']
+        col = ['matrix', 'jaccard', 'nmi', 'davies_bouldin', 'accuracy']
         df = pd.DataFrame(columns=col)
         df['jaccard'] = jaccard_results.values()
         df['nmi'] = nmi_score.values()
@@ -95,11 +100,11 @@ class Validator:
         plt.xticks(list(range(bars)))
         fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
         plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
-        plt.title(self.name + ' - '+ self.consensus + ': Jaccard Distance')
+        plt.title(self.name + ' - ' + self.consensus + ': Jaccard Distance')
         result_path = os.path.join('out', self.name, self.are_clusters_fixed)
         if not os.path.exists(result_path):
             os.makedirs(result_path)
-        plt.savefig(os.path.join(result_path, self.consensus+'_jaccard_score.png'))
+        plt.savefig(os.path.join(result_path, self.consensus + '_jaccard_score.png'))
 
         x = list(nmi_score.keys())
         y = list(nmi_score.values())
@@ -108,8 +113,8 @@ class Validator:
         plt.xticks(list(range(bars)))
         fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
         plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
-        plt.title(self.name + ' - '+ self.consensus + ': Normalized Mutual Info')
-        plt.savefig(os.path.join(result_path, self.consensus+'_nmi_score.png'))
+        plt.title(self.name + ' - ' + self.consensus + ': Normalized Mutual Info')
+        plt.savefig(os.path.join(result_path, self.consensus + '_nmi_score.png'))
 
         x = list(davies_bouldin.keys())
         y = list(davies_bouldin.values())
@@ -118,8 +123,8 @@ class Validator:
         plt.xticks(list(range(bars)))
         fig = plt.bar(list(range(bars)), y, width=len(x) / 8, color=sns.color_palette("Blues", len(x)), align='center')
         plt.legend(fig, list(x), loc="upper left", title='Matrices', framealpha=0.2)
-        plt.title(self.name + ' - '+ self.consensus + ': Davies Bouldin')
-        plt.savefig(os.path.join(result_path, self.consensus+'_bouldin_score.png'))
+        plt.title(self.name + ' - ' + self.consensus + ': Davies Bouldin')
+        plt.savefig(os.path.join(result_path, self.consensus + '_bouldin_score.png'))
 
         x = list(accuracy.keys())
         y = list(accuracy.values())
@@ -131,7 +136,6 @@ class Validator:
         plt.title(self.name + ' - ' + self.consensus + ': Accuracy')
         plt.savefig(os.path.join(result_path, self.consensus + '_accuracy_score.png'))
 
-
     def __map_values_by_frequency(self, values):
         result = np.empty(np.array(values).shape)
         mapping = {}
@@ -142,7 +146,6 @@ class Validator:
         for i, value in enumerate(values):
             result[i] = mapping[value]
         return result
-
 
     def __get_label_rotations(self, clustering):
         n = len(clustering)
@@ -169,7 +172,6 @@ class Validator:
                 accuracy = new_accuracy
         return optimal_rotation
 
-
     def visualize(self, clustering, title):
         # Visualize the clustering partition using the PCA-transformation
         components = pd.DataFrame(self.pc)
@@ -191,13 +193,11 @@ class Validator:
         plt.savefig(path + '/' + figure_name)
         plt.close()
 
-
     def get_random_color(self, clusters):
         colors = []
         length = len(np.array(list(set(clusters))).astype(int))
         for _ in range(length):
             random_color = random.choices(list(range(0, 9)) + ['a', 'b', 'c', 'd', 'e', 'f'], k=4)
-            color = '#' + ''.join([str(k) for k in random_color])  +'aa'
+            color = '#' + ''.join([str(k) for k in random_color]) + 'aa'
             colors.append(color)
         return colors
-

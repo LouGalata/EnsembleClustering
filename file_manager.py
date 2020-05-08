@@ -1,7 +1,8 @@
 import os
-from scipy.io import arff
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+from scipy.io import arff
 
 
 class FileManager:
@@ -16,7 +17,7 @@ class FileManager:
         path = "./temp/"
         if not os.path.exists(path):
             os.makedirs(path)
-        content_data_frame.to_csv(path + csv_file_name + '.csv' )
+        content_data_frame.to_csv(path + csv_file_name + '.csv')
 
     def experiment_dir(self, dataset_name):
         experiment_dir = "./temp/{}".format(dataset_name)
